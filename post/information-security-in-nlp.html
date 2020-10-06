@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>自然语言中的信息安全</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+<link rel="stylesheet" href="file:///c%3A/Users/zjuxi/jianguoyun/%E6%88%91%E7%9A%84%E5%9D%9A%E6%9E%9C%E4%BA%91/website/root/images/markdown.css" type="text/css">
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E4%B8%AD%E7%9A%84%E4%BF%A1%E6%81%AF%E5%AE%89%E5%85%A8">自然语言中的信息安全</h1>
+<p>语言是人类区别于其它动物的重要本质属性，在所有动物中，只有人类才具有语言能力。人类智能的体现大多是通过语言来进行，比如人类在进行逻辑推理时会使用语言作为基本的工具。自然语言处理是研究人与计算机之间有效通信的各种方法与手段的一门学科，即让计算机去理解自然语言。因此，自然语言处理是人工智能较为核心的一部分。实现计算机与人类之间的交流通常需要计算机去理解语言背后所表示的意思，也能用自然语言文本来表达想要说明的意思、意图。前者我们称为自然语言理解，即让计算机去理解人类的语言。后者我们成为自然文本生成，即让计算机生成指定的语言文本。由于自然语言的复杂程度极高，为了让计算机更好地理解自然语言，现代的自然语言处理通常切分为不同的小领域，比如常识推理、多轮对话、机器翻译和知识图谱等。</p>
+<p>自然语言处理是一个极度复杂的领域，并且该领域还有许多尚未解决的挑战与难题，因此该领域也存在着大量的信息安全问题。本文将会从安全问题的两个角度（攻击和防御）出发，系统的阐述当前自然语言处理领域存在的一些安全问题。</p>
+<p>自然语言处理中的信息安全问题主要可分为两类，即自然语言处理在什么场景下最可能被攻击以及自然语言处理的相关技术能够在什么场景下用于防御攻击。本小结会阐述一些有可能被攻击的场景，比如命令输入攻击和客服法律攻击，以及自然语言处理相关的技术能够在防御方面有什么用途，比如恶意脚本检测。</p>
+<h2 id="1-%E6%94%BB%E5%87%BB">1. 攻击</h2>
+<h3 id="11-%E5%91%BD%E4%BB%A4%E8%BE%93%E5%85%A5%E6%94%BB%E5%87%BB">1.1. 命令输入攻击</h3>
+<p>2014年底，亚马逊发布了一款智能音箱Echo。这迅速引爆了整个市场，谷歌、苹果、百度和阿里巴巴等巨头纷纷加入了这个战场。据<a href="Voicebot.ai">Voicebot.ai</a>发布的2018年智能音箱报告，美国智能音箱的用户已经达到了4730万人。智能音箱可用于提问、音乐、天气和语音电子商务等，给用户带来了极大的便利。</p>
+<p>智能音箱所采用的技术正是各种自然语言处理的相关技术，比如语音识别、自然语言理解和自然语言文本生成。语音识别技术尝试着将用户的声音数据以最小的偏差转换为对应的语言文本数据。自然语言理解技术则尝试着将语言文本转化为机器层面可理解的各种应用级指令，如查看天气和听音乐等。自然语言文本生成则尝试着将反馈结果或者意图以语言文本的形式生成，然后再生成对应的语音数据播放给用户。目前由于自然语言处理相关的技术如语音识别多采用基于深度神经网络的方法，这种深度学习的方法存在较为严重的对抗性样本攻击的安全问题。对抗性样本是对人类来说看起来正常的输入，但是却可以欺骗深度学习系统从而使它输出错误预测。这在语音电子商务中对用户危害特别大，比如用户可能会说：“我想买一条围巾”，但是在语音经过攻击系统轻微的干扰之后被语音识别系统解析为：&quot;我想买部华为手机&quot;，这种情况会对用户的经济产生巨大的损失。</p>
+<h3 id="12-%E5%AE%A2%E6%9C%8D%E6%B3%95%E5%BE%8B%E6%94%BB%E5%87%BB">1.2. 客服法律攻击</h3>
+<p>多轮对话技术在大型技术公司受到很大的重视，原因在于多轮对话技术能够用于聊天机器人中，并能够替代像客服这类的工作。传统的人工客服具有许多难以控制的问题，比如服务效率偏低、人工客服情绪不稳定、手动记录问题不精准以及客服服务时间与客户时间无法匹配等。但是聊天机器人却能够不受疲劳，能够全天24小时工作，并且没有情绪。更重要的是，聊天机器人的规模成本远比人工客服要低。因此，聊天机器人客服受到了广大服务业的追捧，被应用于各大行业与领域。</p>
+<p>在电子商务领域，诸如阿里巴巴这样的平台拥有上百万的店铺。这些店铺需要大量的店小二客服24小时在线，可是现实中由于客服工作强度大、工作内容枯燥乏味，导致客服人员流动性大、招聘管理难，而客服体验也不佳，因此开发聊天机器人客服是一件十分有价值的事情。然而客服也面临着许多安全问题，店小二最大的安全问题就是法律相关的风险。举个例子，用户在与店小二客服聊天的过程中，恶意的用户可能会尝试着诱导客服回复一些损害店铺利益的话，比如“买一送十”，这会给店铺带来潜在的法律风险。</p>
+<h2 id="2-%E9%98%B2%E5%BE%A1">2. 防御</h2>
+<h2 id="21-%E5%9E%83%E5%9C%BE%E9%82%AE%E4%BB%B6%E8%BF%87%E6%BB%A4">2.1. 垃圾邮件过滤</h2>
+<p>世界上第一条商业垃圾信息发送于1994年，劳伦斯·坎特和玛格丽特·西格尔通过一个程序将她们法律公司有关绿卡抽奖文件服务的广告副本发送给每一个新闻组组群。从此以后，越来越多的商业公司选择把广告信息通过邮件发送给潜在的客户，这通常被客户看作是垃圾邮件。</p>
+<p>为了对抗垃圾邮件，邮箱服务商开发了各种各样的技术来解决垃圾邮件这个问题。由于早期的垃圾邮件内容十分相似、变化极少，所以邮件服务商只用建立一个简单的垃圾邮件语料库就可以有效屏蔽掉垃圾邮件。然而，垃圾邮件制造者很快发现，通过对垃圾邮件内容的随机变化可以让垃圾邮件过滤器失效。基于马尔可夫链的过滤器能够有效解决这个问题，它于1913年由俄国数学家马尔可夫发明，原理是观察那些字以及字组成的词语、短语、句子以及段落等最容易出现，这能够识别出垃圾邮件中无意义的词排列组合。</p>
+<h2 id="22-%E6%81%B6%E6%84%8Fsql%E6%A3%80%E6%B5%8B">2.2. 恶意SQL检测</h2>
+<pre class="hljs"><code><div><span class="hljs-comment">-- username = "admin"</span>
+<span class="hljs-comment">-- password = "admin@zju"</span>
+
+<span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> <span class="hljs-keyword">users</span> <span class="hljs-keyword">where</span> username=‘<span class="hljs-keyword">admin</span>’ <span class="hljs-keyword">and</span> <span class="hljs-keyword">password</span>=‘<span class="hljs-keyword">admin</span>@zju’
+</div></code></pre>
+<pre class="hljs"><code><div><span class="hljs-comment">-- username = "admin’ or 1 = 1 --"</span>
+<span class="hljs-comment">-- password = "admin@zju"</span>
+
+<span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> <span class="hljs-keyword">users</span> <span class="hljs-keyword">where</span> username=‘<span class="hljs-keyword">admin</span>’ <span class="hljs-keyword">or</span> <span class="hljs-number">1</span> = <span class="hljs-number">1</span> <span class="hljs-comment">--’ and password=‘admin@zju’</span>
+</div></code></pre>
+<p>恶意SQL注入是把恶意的SQL命令放到服务器程序输入字符串数据中，从而达到欺骗服务器数据库并执行恶意SQL命令的目的。以上代码为两条动态拼装的SQL语句，两条SQL语句都是从数据库中<em>users</em>表格验证输入数据<em>username</em>和<em>password</em>是否匹配，从而实现用户登录的功能。第一条SQL语句拼装了正常的用户输入数据，如果这个输入数据的账户、密码和数据库中表格数据相匹配，那么<code>select</code>语句将会检索出正确的用户行，否则检索结果为空。然而对于第二条SQL语句来说，无论用户输入的密码能不能够与数据库中真实的账户密码相匹配，<code>select</code>语句仍然会检索到当前检索用户的信息行。这是因为我们在输入数据字段<em>username</em>插入了SQL恶意代码<code>admin’ or 1 = 1 --</code>，从而可以屏蔽对字段<em>password</em>的检测。</p>
+<p>传统的防护方法主要有：1）通过正则表达式等手段对用户的输入进行检验；2）使用参数化的SQL或者存储过程对数据库进行查询，而不是动态拼装的SQL语句；3）不直接存放密码信息，而应该使用hash等算法加密。近几年由于深度神经网络在自然语言处理领域的应用，SQL注入检测方面也有一些利用神经网络进行特征检测的研究。比如我们可以使用词向量word2vec和循环神经网络LSTM搭建seq2seq模型，该模型对SQL语句进行特征抽取并分类就可以在一定程度上检测到恶意SQL。</p>
+<h2 id="23-%E5%A8%81%E8%83%81%E6%83%85%E6%8A%A5%E6%A3%80%E6%B5%8B">2.3. 威胁情报检测</h2>
+<p>威胁情报是某种基于证据的知识，包括上下文、机制、标示、含义和能够执行的建议等，这些知识与资产所面临已有的或酝酿中的威胁或危害相关，可用于资产相关主体对威胁或危害的响应或处理决策提供信息支持。威胁情报主要可分为四类：</p>
+<ul>
+<li>{战略威胁情报}提供一个全局视角看待威胁环境业务问题，主要涵盖诸如网络攻击活动的财务影响和攻击趋势等。</li>
+<li>{运营威胁情报}与具体的、即将发生的或预计发生的攻击有关，它帮助高级安全人员预测何时何地会发生攻击，并进行针对性的防御。</li>
+<li>{战术威胁情报}关注攻击者的TTP，与特定行业或地区范围的攻击者使用的特定攻击向量有关。</li>
+<li>{技术威胁情报}主要是失陷标示，可以自动识别和阻断恶意攻击行为。</li>
+</ul>
+<p>随着互联网用户的不断增加，互联网上的信息已经达到了不可能靠人力就能处理的地步，这其中威胁信息的检测也变得十分重要。诸如Facebook、Twitter等社交网站上的威胁信息如果得不到有效的处理，那么这将是一个极大的安全隐患。自然语言处理相关的技术为威胁情报的自动检测提供了一定的便利。实际上有许多做威胁情报的安全公司都在利用自然语言处理技术去自动分析网络上的文本数据，进而分析出威胁情报。分析情报流程一般分为以下几个部分：</p>
+<ul>
+<li>首先从全网获取实时信息：包括开源数据、深网、暗网、Tor网站、论坛、社交网络等；</li>
+<li>其次提取和组织威胁信息：使用自然语言处理和机器学习技术组织重建威胁相关信息（作者，事件，目标和IOCs等），并且声称具备多语言提取技术，包括中文、英文、俄语、阿拉伯语、波斯语等；</li>
+<li>最后使威胁信息相关联并提供可指导行动的上下文信息。</li>
+</ul>
+<h1 id="3-%E6%8C%91%E6%88%98">3. 挑战</h1>
+<p>由于如今前沿的自然语言处理相关技术大多是基于有监督或者半监督的深度神经网络，因此大量和高质量的标注数据对于提高检测模型的准确度至关重要。但是在安全防御领域，标注数据缺乏是一个严重的挑战，没有足够的标注数据，就不能够训练出好用的模型。</p>
+<h1 id="4-%E7%BB%93%E8%AF%AD">4. 结语</h1>
+<p>由于近年来深度神经网络的复兴以及算力的提升，基于神经网络技术的自然语言处理也得到了蓬勃发展。诸如Transformer和BERT这种里程碑式的新技术被用于自然语言处理，这极大的提升了计算机对自然语言的理解与意图生成。与此同时，这也给信息安全带来了一些攻击与防御的新方法。在攻击方面，由于自然语言处理还处于比较早期的发展阶段，因此遭受攻击这种情况还没有受到大多数研究人员的关注。在防御方面，自然语言处理相关的技术极大的帮助了我们去自动化的防御某些安全危害。</p>
+
+</body>
+</html>

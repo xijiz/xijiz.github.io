@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>约束即解放</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+<link rel="stylesheet" href="file:///c%3A/Users/zjuxi/jianguoyun/%E6%88%91%E7%9A%84%E5%9D%9A%E6%9E%9C%E4%BA%91/website/root/images/markdown.css" type="text/css">
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="%E7%BA%A6%E6%9D%9F%E5%8D%B3%E8%A7%A3%E6%94%BE">约束即解放</h1>
+<p>纵观人类历史，人类的发展过程就是一个追求更高自由度的过程。细数历史中的风流人物：华盛顿为了国家自由而发动了独立战争；马克思为了无产自由而奉献自己的一身；马丁·路德·金为了黑人的人权而竭尽全力；阿姆斯特朗与奥尔德林为了探索更广阔的宇宙冒着巨大的风险而成为首次登上月球的人...人类为了追求自由的事件数不胜数，对于许多人来说，不约束即更高的自由，然而情况真的是这样的吗？</p>
+<p>我认为在某些情况下不是这样的，我们先来看一个例子。在早期网络大规模普及之前，男女之间会相互结婚主要是通过父母亲朋好友之间的介绍而结婚的，他们的选择极其有限，所以结婚年龄会比较早。在网络普及之后，网络拉近了人类之间的距离，人们一夜之间似乎多了许多选择，但是人们的结婚年龄似乎也越来越晚，同时人们也越来越不满足。这其中，选择的增多起了很大的因素。曾有心理学家做过实验，选择的增多并不会增加人们的幸福感，反而会增加选择焦虑。</p>
+<p>又比如现如今的软件产品，在很多公司看来，留给用户可选择的功能越多越好，所以很多公司都在往增加更多的功能发展，但是多一定是更好的吗？微信能在用户量上超越其它即时通信产品，这与它的功能简单有很大的关系，微信尽量屏蔽了一切与通信不相干的功能，让用户能很快上手并满足自己的核心需求。与QQ相比，这是一个化繁为简的过程。</p>
+<p>在我看来，<code>选择的增多并不意味着更多的自由，相反它会约束你的自由</code>。选择的不断增加是一个复杂度提升的过程，假如对于某一样东西，人的选择有<code>n</code>种，而每一种都有<code>k</code>个可以比较的属性，那么我们需要比较总次数为:</p>
+<pre class="hljs"><code><div>t = k * n
+</div></code></pre>
+<p>随着选择<code>n</code>的增多，选择的成本会越来越高。当然，对于数学好的人，这件事可能很简单，你只需要拿纸和笔将每种可能列下来，最后给每种可能性选择算出一个综合评分即可。但是能轻易对周围事物进行量化的人是很少的，一般人是很难想清楚这件事的。而且其中最关键的一点并不是计算有多么复杂，而是许多事情的某些因素根本无法量化，至少以现有的科技水平是无法量化，因为这其中存在着<code>不确定性</code>。要想尽可能的消除不确定性是一件非常耗费时间和精力的事，而人的时间和精力是有限的，要想弄清每一件事，这对于我们的生活来说是得不偿失的。</p>
+<p>这几年，一小部分人群所倡导的<code>断舍离</code>理念与这种思想是不谋而合的，他们通过减少不必要的东西，来降低生活的复杂度，我认为这是目前一个比较好的解决办法。那么，有没有更好的办法可以解决这种<code>选择增多的约束问题</code>呢？我认为<code>机器学习</code>改变了这一切。今日头条就是这么一个以机器学习推荐算法著称的公司。在信息大爆炸时代，各种信息以指数级别的速度爆炸增长，互联网上几乎拥有我们所需的一切信息，选择虽然变多了，但是要想找到我们所需的信息可不容易，我们想要阅读想要的信息是一件大海捞针的事情。今日头条的推荐算法改变了这一切，它通过信息找人的形式，结合每个个体自身的情况，向每个人推荐自己最感兴趣的信息，这实际上是在降低人们选择的维度。</p>
+<p><code>约束不意味着失去自由，反而在某种程度上约束是一种另类的解放</code>。生活的自律并不会剥夺我们幸福生活的自由，相反它会使我们身体状态更加健康，生活也更加高效；产品不必要功能的减少并不会引起用户的反感，相反它会减少用户的学习成本和使用负担。也许在物质生活与精神生活极为丰富的今天，生活的一切都应该向着约束靠近。</p>
+
+</body>
+</html>

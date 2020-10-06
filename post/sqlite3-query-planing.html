@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>SQLite3查询器的工作原理</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+<link rel="stylesheet" href="file:///c%3A/Users/zjuxi/jianguoyun/%E6%88%91%E7%9A%84%E5%9D%9A%E6%9E%9C%E4%BA%91/website/root/images/markdown.css" type="text/css">
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="sqlite3%E6%9F%A5%E8%AF%A2%E5%99%A8%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86">SQLite3查询器的工作原理</h1>
+<p>本文提供了一些关于<code>query planner</code>如何工作的相关信息，我们可以利用这些信息来创造更好的索引去帮助<code>query planner</code>工作得更好。</p>
+<h2 id="%E7%9B%AE%E5%BD%95">目录</h2>
+<ul>
+<li><a href="#sqlite3%E6%9F%A5%E8%AF%A2%E5%99%A8%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86">SQLite3查询器的工作原理</a>
+<ul>
+<li><a href="#%E7%9B%AE%E5%BD%95">目录</a></li>
+<li><a href="#1-%E6%90%9C%E7%B4%A2">1 搜索</a>
+<ul>
+<li><a href="#11-%E5%B8%A6%E6%9C%89%E7%B4%A2%E5%BC%95%E7%9A%84%E8%A1%A8">1.1 带有索引的表</a></li>
+<li><a href="#12-%E9%80%9A%E8%BF%87%E5%88%97%E7%BC%96%E5%8F%B7rowid%E6%9F%A5%E8%AF%A2">1.2 通过列编号（<code>Rowid</code>）查询</a></li>
+<li><a href="#13-%E9%80%9A%E8%BF%87%E7%B4%A2%E5%BC%95index%E6%9F%A5%E8%AF%A2">1.3 通过索引（<code>index</code>）查询</a></li>
+<li><a href="#14-%E5%A4%9A%E8%A1%8C%E7%BB%93%E6%9E%9C">1.4 多行结果</a></li>
+<li><a href="#15-%E5%A4%9A%E4%B8%AAand%E8%BF%9E%E6%8E%A5%E7%9A%84%E6%9D%A1%E4%BB%B6%E8%AF%AD%E5%8F%A5">1.5 多个<code>And</code>连接的条件语句</a></li>
+<li><a href="#16-%E5%A4%9A%E5%88%97%E7%B4%A2%E5%BC%95">1.6 多列索引</a></li>
+<li><a href="#17-%E5%85%A8%E7%B4%A2%E5%BC%95">1.7 全索引</a></li>
+<li><a href="#18-or%E8%BF%9E%E6%8E%A5%E7%9A%84%E6%9D%A1%E4%BB%B6%E8%AF%AD%E5%8F%A5">1.8 <code>Or</code>连接的条件语句</a></li>
+</ul>
+</li>
+<li><a href="#2-%E6%8E%92%E5%BA%8F">2 排序</a>
+<ul>
+<li><a href="#21-%E9%80%9A%E8%BF%87%E5%88%97%E7%BC%96%E5%8F%B7rowid%E6%8E%92%E5%BA%8F">2.1 通过列编号（<code>Rowid</code>）排序</a></li>
+<li><a href="#22-%E9%80%9A%E8%BF%87%E7%B4%A2%E5%BC%95index%E6%8E%92%E5%BA%8F">2.2 通过索引（<code>index</code>）排序</a></li>
+<li><a href="#23-%E9%80%9A%E8%BF%87%E5%85%A8%E7%B4%A2%E5%BC%95%E6%8E%92%E5%BA%8F">2.3 通过全索引排序</a></li>
+</ul>
+</li>
+<li><a href="#3-%E5%90%8C%E6%97%B6%E6%90%9C%E7%B4%A2%E5%92%8C%E6%8E%92%E5%BA%8F">3 同时搜索和排序</a>
+<ul>
+<li><a href="#31-%E9%80%9A%E8%BF%87%E5%A4%9A%E5%88%97%E7%9A%84%E7%B4%A2%E5%BC%95%E8%BF%9B%E8%A1%8C%E6%90%9C%E7%B4%A2%E5%92%8C%E6%8E%92%E5%BA%8F">3.1 通过多列的索引进行搜索和排序</a></li>
+<li><a href="#32-%E9%80%9A%E8%BF%87%E5%85%A8%E7%B4%A2%E5%BC%95%E6%90%9C%E7%B4%A2%E5%92%8C%E6%8E%92%E5%BA%8F">3.2 通过全索引搜索和排序</a></li>
+<li><a href="#33-%E4%BD%BF%E7%94%A8%E4%B8%80%E4%B8%AA%E7%B4%A2%E5%BC%95%E9%83%A8%E5%88%86%E6%8E%92%E5%BA%8F%E4%BE%8B%E5%A6%82%E5%9D%97%E6%8E%92%E5%BA%8F">3.3 使用一个索引部分排序（例如块排序）</a></li>
+</ul>
+</li>
+<li><a href="#4-%E6%B2%A1%E6%9C%89%E5%88%97%E7%BC%96%E5%8F%B7rowid%E7%9A%84%E8%A1%A8">4 没有列编号（<code>Rowid</code>）的表</a></li>
+</ul>
+</li>
+</ul>
+<p>声明式而不是过程式语言是SQL最好的特性，这对于所有版本的SQL引擎都是一样的，不仅仅是SQLite。当我们在编写SQL时，我们只是在告诉系统我们想要系统进行的计算，而不是如何去计算它。至于如何适当地执行SQL语句这个任务，只需要将它交给SQL数据库引擎的子系统<code>query planner</code>完成即可。</p>
+<p>对于任何的SQL语句，可能有成百上千种算法去执行这个操作，尽管某些算法速度可能会快一点，但是所有的这些算法都会得到正确的答案。而<code>query planner</code>在这个过程中就是一个扮演着尝试着挑选出最快、最有效算法的<code>AI</code>程序。</p>
+<p>在大部分时间，SQLite中的子引擎<code>query planner</code>都工作得非常好，但是，它工作好的前提是需要程序员提前添加一些索引，这样，<code>query planner</code>才能根据这些索引做出一个最优决策。</p>
+<h2 id="1-%E6%90%9C%E7%B4%A2">1 搜索</h2>
+<h3 id="11-%E5%B8%A6%E6%9C%89%E7%B4%A2%E5%BC%95%E7%9A%84%E8%A1%A8">1.1 带有索引的表</h3>
+<p>在SQLite中，大部分表都有零行或者多行的唯一整型键（<code>rowid</code>或者<code>INTEGER PRIMARY KEY</code>）组成，每一行都按照递增<code>rowid</code>顺序逻辑存储。本文以一个名为<code>FruitsForSale</code>的表为例子，它存储了各种水果的种植地以及在市场中的单价，整个表结构SQL如下：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> FruitsForSale(
+  Fruit <span class="hljs-built_in">TEXT</span>,
+  State <span class="hljs-built_in">TEXT</span>,
+  Price <span class="hljs-built_in">REAL</span>
+);
+</div></code></pre>
+<p>往表中插入任意的数据，表在硬盘中逻辑存储的结构如下图所示：</p>
+<p><img src="img/sqlite3_query_planing/1.gif" alt="图1 表&quot;FruitsForSale&quot;的逻辑存储布局"></p>
+<p>在这个例子中，<code>rowid</code>并不是连续的，但是是有序的。通常，<code>rowid</code>是以1开始，并且随着记录每增加一行，<code>rowid</code>也会自动加1。但是，如果某一行被删除，在这个序列中就会产生一些不连续的记录。如果你愿意，应用程序也可以控制<code>rowid</code>的分配，所以新插入的行不必总是分配到最后一行。总的来说，不管怎样，<code>rowid</code>总是唯一的并且是严格按照递增的顺序来分配的。</p>
+<p>假设你想在表中查找桃子的价格，查询语句可能看起来是如下这个样子：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Peach'</span>;
+</div></code></pre>
+<p>为了完成这个查询，SQLite会从第一行依次读每条记录，同时检查<code>fruit</code>列的值是否是桃子(peach)，如果是则输出价格，整个查询的过程可由如下的图2描述。这个扫描算法叫作<code>全表扫描</code>，因为在搜索的过程中，为了找到某一行的目标值整个表的内容都会被读和检查一遍。在一个仅仅只有7行的表里，这个操作是可以接受的，但是如果表包含了七百万条数据，为了找到一个8字节的数字，<code>全表扫描</code>可能会为此读上兆字节的数据。所以通常情况下，我们应该尽力避免<code>全表扫描</code>。</p>
+<p><img src="img/sqlite3_query_planing/2.gif" alt="图2 全表扫描"></p>
+<h3 id="12-%E9%80%9A%E8%BF%87%E5%88%97%E7%BC%96%E5%8F%B7rowid%E6%9F%A5%E8%AF%A2">1.2 通过列编号（<code>Rowid</code>）查询</h3>
+<p>避免<code>全表扫描</code>的技巧之一就是通过<code>rowid</code>（或者<code>INTEGER PRIMARY KEY</code>）查找。为了找到桃子的价格，我们可以通过<code>rowid = 4</code>来编写SQL语句：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">WHERE</span> <span class="hljs-keyword">rowid</span>=<span class="hljs-number">4</span>;
+</div></code></pre>
+<p>因为所有数据记录是按照<code>rowid</code>的顺序存储在表中，所以SQLite能够通过<code>二分查找</code>很快找到正确的一行。如果整个表含有<code>N</code>条记录，那么查找指定行的时间可以缩减到<code>logN</code>而不是像<code>全表扫描</code>那样需要<code>N</code>次扫描。如果表包含1000w条数据，那么查询将会快100w倍（<code>N/logN</code>）。</p>
+<p><img src="img/sqlite3_query_planing/3.gif" alt="图3 通过rowid查找"></p>
+<h3 id="13-%E9%80%9A%E8%BF%87%E7%B4%A2%E5%BC%95index%E6%9F%A5%E8%AF%A2">1.3 通过索引（<code>index</code>）查询</h3>
+<p>但是按照<code>rowid</code>查找数据记录的真正问题是你可能并不关心<code>rowid = 4</code>这条记录的价格是多少，你关心的是桃子的价格是多少，也就是说你在按照<code>rowid</code>查找信息之前，你可能并不知道桃子的<code>rowid</code>是什么，所以按照<code>rowid</code>查找数据记录可能无法实现。</p>
+<p>为了使得按照<code>rowid</code>查找数据记录变得更有效，我们可以为表<code>fruitsforsale</code>的<code>fruit</code>这一列单独添加一个索引，就像这个样子：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">INDEX</span> Idx1 <span class="hljs-keyword">ON</span> fruitsforsale(fruit);
+</div></code></pre>
+<p>索引是另一种类似于<code>fruitsforsale</code>的表，但它的内容（在本例中为列<code>fruit</code>）是存储在<code>rowid</code>前面，而且所有的行都是以内容来进行排序的。如下图4展示了<code>Idx1</code>的逻辑视图，<code>fruit</code>列作为主键来对整个表进行排序，而<code>rowid</code>是第二个键用于打破主键相等时的排序。在本例中，主键中有两个<code>Orange</code>，而<code>rowid</code>就是用于打破它们的平衡，以此达到排序的目的，因为<code>rowid</code>是始终唯一的，所以，<code>fruit + rowid</code>的组合在整个索引中是唯一的。</p>
+<p><img src="img/sqlite3_query_planing/4.gif" alt="图4 Fruit列索引"></p>
+<p>新的索引表可以被用来实现一个更快的算法来查找桃子价格：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Peach'</span>;
+</div></code></pre>
+<p>因为在索引表<code>Idx1</code>中所有数据记录都是按照<code>fruit</code>来进行排序的，所以我们可以通过在索引表上对<code>fruit</code>列做二分查找，从而找到<code>fruit = 'Peach'</code>记录的<code>rowid</code>。等到我们找到<code>rowid</code>之后，我们可以再在<code>fruitsforsale</code>上做一个二分查找通过第一查找找到的<code>rowid</code>值。这样如下图5所示，我们就可以通过两次二分查找找到桃子的价格。</p>
+<p><img src="img/sqlite3_query_planing/5.gif" alt="图5 通过Fruit列索引查找桃子价格"></p>
+<p>在这个例子中，SQLite做了两次二分查找才找到了桃子的价格，但是在存储有大量数据的表中，两次二分查找的速度仍然远远快于<code>全表扫描</code>。</p>
+<h3 id="14-%E5%A4%9A%E8%A1%8C%E7%BB%93%E6%9E%9C">1.4 多行结果</h3>
+<p>在之前查找<code>fruit='Peach'</code>的过程中，我们将结果范围缩减至单行，但是如果我们的查询结果是多行，这种技巧是仍然有效的。假设我们现在要查找橘子：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Orange'</span>;
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/6.gif" alt="图6 通过Fruit列索引查找橘子价格"></p>
+<p>在这个例子中，SQLite仍然通过一次二分查找找到第一个匹配<code>fruit='Orange'</code>的数据记录，然后它利用找到的<code>rowid</code>在原始表中通过二分查找找到橘子的价格并输出。但是此时数据库引擎并没有中止，它会转移到索引表的下一行做同样的匹配判断<code>fruit='Orange'</code>，移到下一行操作所花费的时间远远小于做一次二分搜索的时间，因为下一行与当前行数据经常位于同一数据库页。事实上，移到下一行操作所花费的时间是非常小的，以至于我们可以忽略不计，所以我们这个查找所花费的时间实际上大约是三次二分搜索。假设查找需要输出行的个数为<code>K</code>，表的总行数为<code>N</code>，那么做一次查询通常的时间花费为<code>(K + 1)*logN</code>。</p>
+<h3 id="15-%E5%A4%9A%E4%B8%AAand%E8%BF%9E%E6%8E%A5%E7%9A%84%E6%9D%A1%E4%BB%B6%E8%AF%AD%E5%8F%A5">1.5 多个<code>And</code>连接的条件语句</h3>
+<p>另一个例子，加入你想查找的不仅仅是橘子的价格，而且是加州生产橘子的价格，查询的SQL语句可能如下所示：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Orange'</span> <span class="hljs-keyword">AND</span> state=<span class="hljs-string">'CA'</span>;
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/7.gif" alt="图7 通过Fruit列索引查找加州橘子价格"></p>
+<p>一个方法是先通过索引<code>Idx1</code>查找所有橘子的<code>rowid</code>，然后再在原始表进行二分查找的时候过滤掉不是在加州生产的橘子，这样就得到了所有加州生产橘子的价格，这种算法的查找过程如上图7所示。这种算法在大多数情况下是合理的，但是它会做一些额外的二分查找来找到佛罗里达州的橘子，并在之后把它过滤掉，因此这种算法不是我们所希望的一种理想的算法。</p>
+<p>假设我们额外再为列<code>State</code>添加一个索引：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">INDEX</span> Idx2 <span class="hljs-keyword">ON</span> fruitsforsale(state);
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/8.gif" alt="图8 列State索引"></p>
+<p>使用新的<code>Idx2</code>索引，我们找到加州生产的橘子价格：</p>
+<p><img src="img/sqlite3_query_planing/9.gif" alt="图9 通过列State索引查找加州橘子"></p>
+<p>虽然使用索引<code>Idx2</code>导致SQLite获得了不同的列数据集，但是最终却得到了相同的结果（这是非常重要的，索引并不会改变答案，而是帮助引擎更快地搜索到结果），与此同时使用索引<code>Idx2</code>与使用索引<code>Idx1</code>做了同样多的工作量，它并没有帮助提高性能。</p>
+<p>在我们的例子中，最后两次查询花了同样多的时间，所以最终引擎会选择哪一个索引呢？如果我们使用<code>ANALYZE</code>命令对数据库进行分析，数据库会统计可用的索引数据，然后数据库会知道<code>Idx1</code>一般会将搜索范围缩减至一行（除开本例<code>fruit='Orange'</code>）而<code>Idx2</code>一般会将搜索结果缩减至两行。所以，如果其它的所有都相等，为了尽可能减少搜索出的数据集数量，数据库会优先选择索引<code>Idx1</code>。之所以会有这种结果，是因为这种结果是<code>ANALYZE</code>命令分析得出的，如果没有这个命令，索引的选择将会是另一种情况。</p>
+<h3 id="16-%E5%A4%9A%E5%88%97%E7%B4%A2%E5%BC%95">1.6 多列索引</h3>
+<p>为了在<code>AND</code>连接的多列条件SQL查询语句中获得最大的性能，我们会创建一个多列的索引：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">INDEX</span> Idx3 <span class="hljs-keyword">ON</span> FruitsForSale(fruit, state);
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/10.gif" alt="图10 两列索引"></p>
+<p>多列索引与单列索引遵循相同的规则，索引的列将会被放在<code>rowid</code>之前。唯一的区别就是现在有多列被添加为索引，最左边的一列作为主键对索引表进行排序，而第二列则是用于打破最左边列数据相等时的平衡。如果这里有第三列索引，那么同样地，第三列将会用于打破第二列数据相等时的平衡。因此对于索引中的所有数据行来说，因为<code>rowid</code>保证是唯一的，即便是索引表中两列索引数据所有都是一样的，索引表中的每一行数据也是唯一的。在我们的样例中，<code>fruit='Orange'</code>在第一列索引中会出现数据相等的情况，但这种情况不会持续太久，因为它会被第二列的数据打破僵局。</p>
+<p>通过使用新的索引<code>Idx3</code>，我们可以通过两次二分查找就找到加州生长橘子的价格:</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Orange'</span> <span class="hljs-keyword">AND</span> state=<span class="hljs-string">'CA'</span>;
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/11.gif" alt="图11 通过两列索引查找数据"></p>
+<p>在上面<code>AND</code>连接限制的SQL语句中，SQLite仅仅只需要做一次二分查找就可以找到加州生长橘子的<code>rowid</code>，然后在原始表中再做一次二分查找找到橘子的价格。在这个查找过程中，这里不需要更多的二分查找即可完成此次查询。</p>
+<p>这里我们注意到索引<code>Idx3</code>也包含索引<code>Idx1</code>的所有信息，所以此时我么已经不需要<code>Idx1</code>了，查找桃子的价格也可以通过忽略索引表<code>Idx3</code>中<code>State</code>列即可进行查找：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Peach'</span>;
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/12.gif" alt="图12 通过多列索引查找单列数据"></p>
+<p>因此，我们可以从此处看出一个好的数据库设计规则是<code>不应该包含这样两个索引，其中一个索引是另一个索引的前缀</code>。所以，删除带有更少列的索引，SQLite仍然会通过更长列的索引进行高效地查询工作。</p>
+<h3 id="17-%E5%85%A8%E7%B4%A2%E5%BC%95">1.7 全索引</h3>
+<p>查找加州生长橘子的价格通过两列索引已经足够高效了，但是我们可以通过创建一个三列索引来做得更好：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">INDEX</span> Idx4 <span class="hljs-keyword">ON</span> FruitsForSale(fruit, state, price);
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/13.gif" alt="图13 全索引"></p>
+<p>这个索引表包含了原始表<code>FruitsForSale</code>的所有列，包括了<code>所有搜索项</code>和<code>rowid</code>，我们称之为<code>全索引</code>。因为所有的信息都包括在全索引中，所以SQLite不需要查询原始表就可以找到橘子价格。</p>
+<p><img src="img/sqlite3_query_planing/14.gif" alt="图14 通过全索引查找"></p>
+<p>因此，通过在索引中添加额外的<code>输出列</code>能够避免在原始表中再查询一次，而且能够将二分查找的次数减半。这是一个常数级的性能提升（粗略地将速度提升一倍）。但是从另一方面来讲，它仅仅是一次小的修正。当表第一次建立索引时，两倍的性能提升对于之前100w倍的提升还不够明显。对于大多数的查询，查询1和查询2之前的毫秒级的差别通常都不会被注意到。</p>
+<h3 id="18-or%E8%BF%9E%E6%8E%A5%E7%9A%84%E6%9D%A1%E4%BB%B6%E8%AF%AD%E5%8F%A5">1.8 <code>Or</code>连接的条件语句</h3>
+<p>多列的索引仅仅是当<code>WHERE</code>限制语句中是<code>AND</code>连接的时候才会起作用，所以当我们查找<code>要么在加州生长要么是橘子</code>时，<code>Idx3</code>和<code>Idx4</code>或许对我们有用：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> FruitsForSale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Orange'</span> <span class="hljs-keyword">OR</span> state=<span class="hljs-string">'CA'</span>;
+</div></code></pre>
+<p>当面临<code>OR</code>连接的SQL语句时，SQLite会检查每一个<code>OR</code>连接的条件，然后单独通过一个索引找出对应条件的<code>rowid</code>，之后，数据库引擎再将所有结果求交集，最后得到的<code>rowid</code>就是所查找数据记录的<code>rowid</code>，整个查找流程如下图所示：</p>
+<p><img src="img/sqlite3_query_planing/15.gif" alt="图15 OR连接的查询"></p>
+<p>以上操作流程显示了SQLite会事先计算好所有<code>rowid</code>，然后再将其求交集，最终才到原始表中进行查找。在实际情况中，<code>rowid</code>的查找伴随着<code>rowid</code>的计算，SQLite在利用索引查找<code>rowid</code>的同时也会记住哪些列之前已经查找过，以此来避免重复的查找。这是SQLite引擎实现的细节，所以这张图并不是100%准确描述了查找过程。</p>
+<p>为了帮助<code>OR - UNION</code>这种技巧变得有效，每一个<code>OR</code>连接的列都必须有其对应的索引。即使是只有其中一个项没有索引，那么数据库引擎也不得不对其进行<code>全表扫描</code>，如果SQLite做了<code>全表扫描</code>，它可能在原始表中只做一次全表扫描即可，而没有<code>UNION</code>操作和之后的二分搜索。</p>
+<p>我们也可以看到SQLite利用<code>OR-BY-UNION</code>技巧在多个索引上针对包含<code>AND</code>连接条件的查询进行优化通过使用内连接的操作。很多SQL数据库引擎也实现了相同的操作，但是使用单个索引获得的性能提升是很小的，所以SQLite没有完成这一个技巧。</p>
+<h2 id="2-%E6%8E%92%E5%BA%8F">2 排序</h2>
+<p>正如其它SQL数据库引擎一样，SQLite也能在查询中通过索引来加速完成从句中的<code>ORDER BY</code>功能，也就是排序功能。当没有合适的索引时，一个带着排序的查询语句可能是分这几个步骤完成的。考虑以下这个查询：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> fruit;
+</div></code></pre>
+<p>SQLite在处理这个查询的时候是将所有的输出先查询出来，然后再单独通过一个排序器对其进行排序。</p>
+<p><img src="img/sqlite3_query_planing/16.gif" alt="图16 无索引的排序"></p>
+<p>如果查询结果的行数是<code>K</code>，那么排序所需要花费的时间一般是<code>KlogK</code>。如果<code>K</code>非常小，那么排序所花费的时间不会有很大的影响，但是假设有这么一种情况<code>K == N</code>，那么排序所花费的时间会远远超过<code>全表扫描</code>。而且，整个输出数据会累积到缓冲区中（一般为主存或者硬盘，依赖于编译时间和运行时设置），这意味着将需要大量额外的缓冲区存储来完成这个查询。</p>
+<h3 id="21-%E9%80%9A%E8%BF%87%E5%88%97%E7%BC%96%E5%8F%B7rowid%E6%8E%92%E5%BA%8F">2.1 通过列编号（<code>Rowid</code>）排序</h3>
+<p>正是因为排序的成本代价非常高，所以SQLite倾向于把排序操作转换成无操作。如果SQLite可以把输出自然地变成某一特定的顺序，那么我们将不需要排序操作。举一个例子，如果我们要求输出的顺序是按照<code>rowid</code>来排序的，那么这里将不会有排序操作发生：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">rowid</span>;
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/17.gif" alt="图17 通过Rowid排序"></p>
+<p>我们也可以像下面这样要求降序排列：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">rowid</span> <span class="hljs-keyword">DESC</span>;
+</div></code></pre>
+<p>SQLite仍然会忽略排序这一步，但是为了按照指定的顺序输出，数据库会从表的最后往前扫描。</p>
+<h3 id="22-%E9%80%9A%E8%BF%87%E7%B4%A2%E5%BC%95index%E6%8E%92%E5%BA%8F">2.2 通过索引（<code>index</code>）排序</h3>
+<p>当然，按照<code>rowid</code>来排序是很少用到的。通常我们会想要通过其它的列进行排序。</p>
+<p>如果我们想要通过某一列进行排序，而恰巧这一列已经有了对应的索引，那么这一个索引就可以被用来排序。考虑如下对<code>fruit</code>进行排序的SQL语句：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> fruitsforsale <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> fruit;
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/18.gif" alt="图18 通过索引排序"></p>
+<p>为了找出按照<code>fruit</code>顺序排序的每一行<code>rowid</code>，我们可以通过从上到下扫描<code>Idx1</code>（或者从下到上，如果SQL语句是<code>ORDER BY fruit DESC</code>）。然后，对于每一个<code>rowid</code>，我们可以做一个二分搜索进行查找并输出。在这种方式中，我们在找到对应的数据后就不必再对其单独进行排序，因为我们得到的数据就是按照<code>fruit</code>排好序输出的。</p>
+<p>但是这种方式就真的节省时间吗？我们对原始表做无索引排序的时间大致是<code>NlogN</code>，而我们使用索引<code>Idx1</code>来完成<code>N</code>次<code>rowid</code>查找，每次查找所花费的时间为<code>logN</code>，所以两者的总时间花费是一样的。</p>
+<p>SQLite使用了一个基于<code>花费</code>的的<code>query planner</code>。当这里有两种或者更多的方式完成同样的查询时，SQLite尝试着评估每一种方法的总时间花费，然后使用时间花费最小的方式。花费一般用时间来评估，所以这种评估结果依赖于表大小和一些<code>WHERE</code>限制条件等等。但是一般来说，数据库引擎会选择索引排序，因为如果没有别的原因，索引排序是不需要额外的缓冲区存储空间。</p>
+<h3 id="23-%E9%80%9A%E8%BF%87%E5%85%A8%E7%B4%A2%E5%BC%95%E6%8E%92%E5%BA%8F">2.3 通过全索引排序</h3>
+<p>如果一个全索引能够被用于查询，那么多个的原始表<code>rowid</code>查找将可以被避免，与此同时，查询所花费的时间也会急剧下降。</p>
+<p><img src="img/sqlite3_query_planing/19.gif" alt="图19 通过全索引排序"></p>
+<p>通过全索引，SQLite能轻易地从索引表的一头走到另一头并输出结果，花费的时间也会大致等于<code>N</code>以及不用分配别的缓冲区来装查询结果。</p>
+<h2 id="3-%E5%90%8C%E6%97%B6%E6%90%9C%E7%B4%A2%E5%92%8C%E6%8E%92%E5%BA%8F">3 同时搜索和排序</h2>
+<p>之前的讨论都是搜索和排序分别进行，接下来，我们将会讨论在同一个查询中，查询和排序同时存在，幸运地是，我们可以通过一个索引做到同时搜索和排序。</p>
+<h3 id="31-%E9%80%9A%E8%BF%87%E5%A4%9A%E5%88%97%E7%9A%84%E7%B4%A2%E5%BC%95%E8%BF%9B%E8%A1%8C%E6%90%9C%E7%B4%A2%E5%92%8C%E6%8E%92%E5%BA%8F">3.1 通过多列的索引进行搜索和排序</h3>
+<p>假设我们想要以生长地为顺序找到所有橘子的价格，查询语句如下：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> fruitforsale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Orange'</span> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> state;
+</div></code></pre>
+<p>这个查询既包含了一个搜索限制也包含了一个排序限制，搜索和排序能够使用两列索引<code>Idx3</code>同时完成。</p>
+<p><img src="img/sqlite3_query_planing/20.gif" alt="图20 通过多列索引进行搜索和排序"></p>
+<p>这个查询会通过在索引上做一次二分查找进行（<code>fruit='Orange'</code>）。因为<code>fruit</code>列是索引表最左边的列，而且所有的行都是处于有序状态，所以在索引表中找到的橘子<code>rowid</code>只需要在对应的原始表中分别进行二分查找即可得到按顺序排列的橘子价格。</p>
+<p>我们会注意到这里没有额外的排序步骤，所以<code>ORDER BY</code>从句是变成了一个无操作从句。</p>
+<h3 id="32-%E9%80%9A%E8%BF%87%E5%85%A8%E7%B4%A2%E5%BC%95%E6%90%9C%E7%B4%A2%E5%92%8C%E6%8E%92%E5%BA%8F">3.2 通过全索引搜索和排序</h3>
+<p>全索引也可以用于同时搜索和排序，考虑如下这个搜索：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> fruitforsale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Orange'</span> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> state;
+</div></code></pre>
+<p><img src="img/sqlite3_query_planing/21.gif" alt="图21 通过全索引进行搜索和排序"></p>
+<p>正如之前的操作一样，SQLite会对索引表单独做一个二分搜索并找出满足条件的数据，然后再从找到的数据列开始从上到下找出目标数据。满足条件的数据会被保证是相邻的，因为条件从句的约束正好满足索引最左边一列。</p>
+<p>SQLite也能够对倒叙（<code>descending ORDER BY</code>）做相同的操作：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> fruitforsale <span class="hljs-keyword">WHERE</span> fruit=<span class="hljs-string">'Orange'</span> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> state <span class="hljs-keyword">DESC</span>;
+</div></code></pre>
+<h3 id="33-%E4%BD%BF%E7%94%A8%E4%B8%80%E4%B8%AA%E7%B4%A2%E5%BC%95%E9%83%A8%E5%88%86%E6%8E%92%E5%BA%8F%E4%BE%8B%E5%A6%82%E5%9D%97%E6%8E%92%E5%BA%8F">3.3 使用一个索引部分排序（例如块排序）</h3>
+<p>有时，仅仅只有<code>ORDER BY</code>的一小部分能够满足索引，考虑如下一个例子：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> fruitforsale <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> fruit, price;
+</div></code></pre>
+<p>如果全索引被用于扫描，那么首先<code>fruit</code>列自然会出现正确的顺序，但是当那儿有两或者更多的<code>fruit</code>行相等，价格可能会无序。在这种情况下，SQLite会做很多小的排序，每一个不同水果值都要做一个小的排序，而不是一个大的排序，下图描绘了排序过程：</p>
+<p><img src="img/sqlite3_query_planing/22.gif" alt="图22 通过索引进行部分排序"></p>
+<p>在这个例子中，SQLite没有单独进行一个7个元素的排序，而是分成5次一个元素的排序和1次两个元素的排序（<code>fruit=='Orange'</code>）。</p>
+<p>把单个大排序分成小排序有如下优势：</p>
+<ul>
+<li>1 花费更少的CPU循环</li>
+<li>2 每个小排序单独进行，意味着花费更小的缓冲区存储</li>
+<li>3 那些已经有序的列可以被忽略进行排序，依次来减少运行时间和存储空间</li>
+<li>4 输出行可以在每一个小排序进行完之前就返回应用</li>
+<li>5 如果条件从句中有其他的限制，可以避免扫描整个表</li>
+</ul>
+<h2 id="4-%E6%B2%A1%E6%9C%89%E5%88%97%E7%BC%96%E5%8F%B7rowid%E7%9A%84%E8%A1%A8">4 没有列编号（<code>Rowid</code>）的表</h2>
+<p>对于有<code>rowid</code>和没有<code>rowid</code>的表来说，基本的准则都是一样的，唯一的差异就是没有<code>rowid</code>的表被<code>PRIMARY KEY</code>替代。</p>
+
+</body>
+</html>

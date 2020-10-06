@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>什么是理解</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+<link rel="stylesheet" href="file:///c%3A/Users/zjuxi/jianguoyun/%E6%88%91%E7%9A%84%E5%9D%9A%E6%9E%9C%E4%BA%91/website/root/images/markdown.css" type="text/css">
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="%E4%BB%80%E4%B9%88%E6%98%AF%E7%90%86%E8%A7%A3">什么是理解</h1>
+<p>我们说理解一样事物通常是指我们把一件事物融会贯通，能够理论联合实际，可是这个融会贯通又是指的什么？</p>
+<p>认知科学认为<strong>理解</strong>是一个有关于实体和人之间发生关系的过程，它的发生能够让人知道到实体的概念和实体相关的行为，并能够支持人的智能行为。例如，理解天气就意味着我们能够知晓天气相关的信息并能够预测天气的变化，理解一个人就意味着我们能够知晓这个人的相关信息并能够预测他将来的行为。</p>
+<p>计算机科学家<em>Gregory Chaitin</em>认为理解是某种程度上的数据压缩，可看做是一种模型。他认为理解事物就意味着我们能够用一个简单的规则集合来解释它。例如，我们理解白天和夜晚的存在，因为我们有一个简单的地球自转模型能够解释海量的亮度、温度和地球气候变化等的数据。我们通过一个简单的模型将大量的数据信息压缩，并能够利用该模型准确地预测该事物的行为。</p>
+<pre class="hljs"><code><div>    f(θ,s; x) -&gt; y
+</div></code></pre>
+<p>这里的理解过程与机器学习模型颇有一点相似之处。机器学习先提出一个比较复杂的数据模型<code>f</code>，这个数据模型包含大量未知的参数<code>θ</code>，我们通过输入大量能够表征事物特征的数据<code>x</code>以及对应的行为<code>y</code>，这个模型就能够学习到事物的一般规则。我们输入的数据越多，模型越能够准确地预测事物的行为。</p>
+<p><strong>理解</strong>是我们获取并加工信息并有效认识世界的过程，这里的信息也被称作知识或者技能。既然要认识世界，那么势必要有合理的工具，科学就是这把工具。</p>
+<p>根据事物尺度的不同，科学把世界看作是一个分层的世界，每一个层次都有自己独特的组件和演化规则。不同的科学处于不同的层次。量子物理目前处理人类已知最微观的层面，它研究不同的基本粒子以及它们之间的相互作用。化学则试图研究分子层面的演化规则，比如不同原子或者分子和它们之间的相互作用。生物学试图研究细胞层面的演化规则，比如不同细胞和组织以及它们之间的相互作用。同样地，经济学的基本研究对象是人，它研究人与人之间的经济关系；天体物理研究的基本对象是各种天体，它研究天体之间的关系。</p>
+<p>这里还有其它许多学科，我无法一一列举完。但它们都有着相同的特征，每一门学科都有着基本的研究对象，它们的研究目标都是这些基本对象的内在属性以及对象之间的相互演变关系。这是我们认识理解世界最普遍的方式，这可以抽象成节点知识图网络，即知识图谱，它在一定程度上能够简单表示我们理解的世界。</p>
+<p><img src="img/what_is_understanding/knowledge-graph-for-cat.png" alt="猫"></p>
+<p>如上所示，以猫的部分知识图谱为例。我们理解猫的过程就是记住（编码）与猫相关的事物的过程，我们记住猫的汉语语言符号是<code>猫</code>，猫的科属是<code>猫科</code>，猫的预期寿命是<code>15年</code>，猫的视觉图像如上图所示。我们为猫与其他事物建立的联系越多，我们就理解得越透彻，我们也能够更加准确地预测猫的行为并更好地支持我们的智能行为。</p>
+<p>以不同人群由浅入深地理解猫为例：</p>
+<ul>
+<li>5岁小孩子可能只知道猫的汉语符号是什么、各种不同猫的视觉图像以及猫的叫声；</li>
+<li>15岁的中学生可能在此基础上了解了更多猫的信息，比如猫属于猫科动物，同属于猫科动物的还有老虎；</li>
+<li>研究猫科动物的硕士可能了解猫更多的生物学信息，比如猫的预期寿命是15年，孕期是64天。</li>
+</ul>
+<p>一般在以上的几个人群中来讲，我们认为研究猫科动物的硕士对猫的理解是最深的。因此，基本事物以及事物与事物之间的连接构成了我们对世界的理解。</p>
+<p>这也是为什么有一些英语学习专家倡导学习英语时要采用联想法，比如学习猫的单词<code>cat</code>时，我们要看猫相关的图像与视频（视觉联系）、要不断拼写（手感联系）、要读出来（声音联系），最好还要在英文环境下阅读关于猫的文章（与其它单词的联系）。</p>
+<p>智力的一个表现就是运用这种事物与事物之间的联系推理出新的关系或者预测事物的行为，通常这种推理是在语言符号上进行的，比如汉语、英语或者数学等。</p>
+<p>人的注意力资源是有限的，使用语言符号表示复杂世界的好处之一是它能够用较少的细节减少我们在推理或者预测时对注意力资源的消耗。猫的视觉信息通常来说细节是特别丰富的，我们如果要保持对视觉信息的注意，那么我们就很难去思考别的相关事物。</p>
+<p>类似地，计算机的高速缓存是计算机进行高速计算的资源缓存器，这与注意力资源颇为相似。通常来讲，高速缓存的容量是极其有限的，所以高速缓存里存储的东西都是与当前计算最重要且压缩到极致的数据。</p>
+<p>语言符号就是这样一种数据，这与计算机科学家<em>Gregory Chaitin</em>的数据理解模型不谋而合，语言符号尝试着用最少的注意力占有资源更多地表示世界，并支持相应的智力活动。</p>
+<p>如果我们利用语言符号建立猫的知识图谱，然后利用算法对猫这个节点以及相关的关系进行信息聚合与抽象，比如利用图卷积网络对猫进行卷积聚合出更高层次的信息，那么我们是否可以说聚合出来的信息是机器对猫的理解呢？</p>
+
+</body>
+</html>

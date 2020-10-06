@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Berkeley Ray与原生Python的对比</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+<link rel="stylesheet" href="file:///c%3A/Users/zjuxi/jianguoyun/%E6%88%91%E7%9A%84%E5%9D%9A%E6%9E%9C%E4%BA%91/website/root/images/markdown.css" type="text/css">
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="berkeley-ray%E4%B8%8E%E5%8E%9F%E7%94%9Fpython%E7%9A%84%E5%AF%B9%E6%AF%94">Berkeley Ray与原生Python的对比</h1>
+<p>随着机器学习算法的迅速发展，越来越多的机器学习应用程序需要多台机器来进行并行计算以此来加快速度。但是，在集群上进行机器学习的基础设施仍然是一次性的。虽然确实存在针对特定用例（例如，参数服务器或超参数搜索）和AI之外的高质量分布式系统的良好解决方案（例如，Hadoop或Spark），但是开发前沿算法的人员通常从头开始构建他们自己的系统基础结构，这需要大量多余的努力。</p>
+<p>例如，一个概念上比较简单的算法 - 进化策略进行强化学习。该算法大约有十几行伪代码，其Python实现并不需要更多的代码。但是，在更大的机器或集群上有效地运行算法需要更多软件工程层面的工作。这涉及数千行代码，必须定义通信协议且消息序列化和反序列化策略以及各种数据处理策略。</p>
+<p>Berkeley Ray（以下简称Ray）是一个以大规模机器学习为目标的高性能分布式计算框架。Ray通过抽象系统状态到一个全局控制存储区和保持其它所有的组件无状态来实现可扩展性和容错能力。在数据调度方面，Ray使用了分布式共享内存存储来高效地处理大规模数据，它也使用了一个从下到上的层次化调度架构去实现低延迟和高吞吐。Ray也有着基于动态任务图的轻量级接口，可以灵活地应用到各种应用上。</p>
+<h2 id="1-%E7%94%A8%E6%B3%95">1. 用法</h2>
+<h3 id="11-%E7%AE%80%E5%8D%95%E7%9A%84%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97">1.1. 简单的数据并行计算</h3>
+<p>我们可以导入ray，并且指定参数初始化Ray。通常来说，ray不会调度超过CPU个数的并发任务，所以我们需要指定CPU的个数或者ray自动利用<code>psutil.cpu_count()</code>计算。</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">import</span> ray
+ray.init(num_cpus=<span class="hljs-number">4</span>)
+</div></code></pre>
+<p>我们可以定义一个常规的python函数和一个ray的远程函数来看看有何不同，将常规函数转换成ray的远程函数的方法就是在函数上面加上<code>@ray.remote</code>装饰器。</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># 常规Python函数</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">regular_function</span><span class="hljs-params">()</span>:</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>
+
+<span class="hljs-comment"># Ray远程函数</span>
+<span class="hljs-meta">@ray.remote</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">remote_function</span><span class="hljs-params">()</span>:</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>
+</div></code></pre>
+<p>这两个函数有这几个不同之处：</p>
+<ul>
+<li>
+<p>激活方式：常规函数激活方式是通过调用<code>regular_function()</code>，而远程函数是通过调用<code>remote_function.remote()</code>；</p>
+</li>
+<li>
+<p>返回值：<code>regular_function()</code>是阻塞式地执行并立即返回1，但是<code>remote_function.remote()</code>非阻塞式执行且会立即返回一个Object ID，以及创建一个进程执行这个任务，而运行结果由<code>ray.get</code>阻塞式得到。</p>
+<pre class="hljs"><code><div>    &gt;&gt;&gt; regular_function()
+    <span class="hljs-number">1</span>
+
+    &gt;&gt;&gt; remote_function.remote()
+    ObjectID(<span class="hljs-number">1</span>c80d6937802cd7786ad25e50caf2f023c95e350)
+
+    &gt;&gt;&gt; ray.get(remote_function.remote())
+    <span class="hljs-number">1</span>
+</div></code></pre>
+</li>
+<li>
+<p>并行：<code>regular_function</code>的调用会顺序执行，而<code>remote_function</code>的调用会并行执行。</p>
+<pre class="hljs"><code><div>    <span class="hljs-comment"># 串行</span>
+    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> range(<span class="hljs-number">4</span>):
+        regular_function()
+    <span class="hljs-comment"># 并行</span>
+    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> range(<span class="hljs-number">4</span>):
+        remote_function.remote()
+</div></code></pre>
+</li>
+</ul>
+<h3 id="12-%E4%BB%BB%E5%8A%A1%E4%BE%9D%E8%B5%96">1.2. 任务依赖</h3>
+<p><img src="img/naive_python_2_berkeley_ray/task_graph.png" alt="task"></p>
+<p>有时候你在执行任务时，某个函数的输入可能是另一个函数的输出，ray通过一个任务有向图很好地解决了这个问题。</p>
+<pre class="hljs"><code><div><span class="hljs-meta">@ray.remote</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f</span><span class="hljs-params">(x)</span>:</span>
+    <span class="hljs-keyword">return</span> x
+
+<span class="hljs-meta">&gt;&gt;&gt; </span>x1_id = f.remote(<span class="hljs-number">1</span>)
+<span class="hljs-meta">&gt;&gt;&gt; </span>ray.get(x1_id)
+<span class="hljs-number">1</span>
+
+<span class="hljs-meta">&gt;&gt;&gt; </span>y1_id = f.remote(x1_id)
+<span class="hljs-meta">&gt;&gt;&gt; </span>ray.get(y1_id)
+<span class="hljs-number">1</span>
+</div></code></pre>
+<p>我们可以将<strong>Object IDs</strong>输入到远程函数中，当实际的函数得到执行时，参数会被当作一个正常的Python对象。在这个例子中，<em>y1_id</em>的创建依赖于任务<em>x1_id</em>，只有当第一个任务执行完成后，第二个任务才会开始执行。如果在不同的计算机上执行这两个任务，则第一个任务的输出（对应于x1_id的值）将通过网络复制到调度到第二个任务的计算机。</p>
+<h3 id="13-%E5%B5%8C%E5%A5%97%E5%B9%B6%E8%A1%8C">1.3. 嵌套并行</h3>
+<p>Ray可以很方便的计算嵌套并行的任务，比如以下的<code>g()</code>和<code>h()</code>分别嵌套调用了<code>f()</code>的远程函数，唯一的限制就是<code>f()</code>需要在调用它的调用函数之前定义，这里需要在定义<code>g(),h()</code>之前定义。因为在定义某个远程函数的时候，这个函数会被序列化且转运到工作进程中，如果调用的远程函数<code>f()</code>还没有定义，那么定义会不完整。</p>
+<pre class="hljs"><code><div><span class="hljs-meta">@ray.remote</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f</span><span class="hljs-params">()</span>:</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>
+
+<span class="hljs-meta">@ray.remote</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">g</span><span class="hljs-params">()</span>:</span>
+    <span class="hljs-keyword">return</span> [f.remote() <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> range(<span class="hljs-number">4</span>)]
+
+<span class="hljs-meta">@ray.remote</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">h</span><span class="hljs-params">()</span>:</span>
+    <span class="hljs-keyword">return</span> ray.get([f.remote() <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> range(<span class="hljs-number">4</span>)])
+
+<span class="hljs-meta">&gt;&gt;&gt; </span>ray.get(g.remote())
+[ObjectID(b1457ba0911ae84989aae86f89409e953dd9a80e),
+ ObjectID(<span class="hljs-number">7</span>c14a1d13a56d8dc01e800761a66f09201104275),
+ ObjectID(<span class="hljs-number">99763728</span>ffc1a2c0766a2000ebabded52514e9a6),
+ ObjectID(<span class="hljs-number">9</span>c2f372e1933b04b2936bb6f58161285829b9914)]
+
+<span class="hljs-meta">&gt;&gt;&gt; </span>ray.get(h.remote())
+[<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">1</span>]
+</div></code></pre>
+<h3 id="14-actors">1.4. Actors</h3>
+<p>Ray的远程函数功能应该被认为是功能性和无副作用的。仅限于远程函数限制我们使用分布式函数式编程，这对于许多用例来说都很好，但实际上有点受限。Ray使用actor扩展了数据流模型。Actor本质上是一个有状态的worker（或服务）。实例化新的actor时，将创建一个新的worker，并在该特定的worker上安排actor的方法，并可以访问和改变该worker的状态。</p>
+<p>不同的是，当我们实例化一个actor时，会创建一个全新的worker，并且在该新的actor上执行所有方法。这意味着使用单个actor时，不能实现并行，因为对actor的方法的调用将一次执行一个。但是，可以创建多个actor，并且可以并行地执行actor的方法。</p>
+<pre class="hljs"><code><div><span class="hljs-meta">@ray.remote</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Example</span><span class="hljs-params">(object)</span>:</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self, x)</span>:</span>
+        self.x = x
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">set</span><span class="hljs-params">(self, x)</span>:</span>
+        self.x = x
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-keyword">return</span> self.x
+
+e = Example.remote(<span class="hljs-number">1</span>)
+
+<span class="hljs-meta">&gt;&gt;&gt; </span>e.set.remote(<span class="hljs-number">2</span>)
+ ObjectID(d966aa9b6486331dc2257522734a69ff603e5a1c)
+
+<span class="hljs-meta">&gt;&gt;&gt; </span>e.get.remote()
+ObjectID(<span class="hljs-number">7</span>c432c085864ed4c7c18cf112377a608676afbc3)
+
+<span class="hljs-meta">&gt;&gt;&gt; </span>ray.get(e.set.remote(<span class="hljs-number">2</span>))
+ <span class="hljs-literal">None</span>
+
+<span class="hljs-meta">&gt;&gt;&gt; </span>ray.get(e.get.remote())
+<span class="hljs-number">2</span>
+</div></code></pre>
+<p>假设我们有多个任务在同一个actor上调用方法。例如，我们可能有一个actor记录来自许多任务的执行信息。我们可以将actor句柄作为参数传递给相关任务来实现这一点。</p>
+<pre class="hljs"><code><div><span class="hljs-meta">@ray.remote</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Actor</span><span class="hljs-params">(object)</span>:</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">method</span><span class="hljs-params">(self)</span>:</span>
+        <span class="hljs-keyword">pass</span>
+
+<span class="hljs-comment"># 创建actor</span>
+actor = Actor.remote()
+
+<span class="hljs-meta">@ray.remote</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f</span><span class="hljs-params">(actor)</span>:</span>
+    <span class="hljs-comment"># 激活actor的函数</span>
+    x_id = actor.method.remote()
+    <span class="hljs-comment"># 真正的阻塞调用返回结果</span>
+    <span class="hljs-keyword">return</span> ray.get(x_id)
+
+<span class="hljs-comment"># 三个任务都会调用同一个actor的方法</span>
+f.remote(actor)
+f.remote(actor)
+f.remote(actor)
+</div></code></pre>
+<h3 id="15-raywait">1.5. ray.wait</h3>
+<p>启动许多任务后，你可能想知道哪些任务已完成执行，这可以通过ray.wait完成。</p>
+<pre class="hljs"><code><div>ready_ids, remaining_ids = ray.wait(object_ids, num_returns=<span class="hljs-number">1</span>, timeout=<span class="hljs-literal">None</span>)
+</div></code></pre>
+<ul>
+<li>
+<p>参数</p>
+<ul>
+<li><em>object_ids:</em> object IDs的列表；</li>
+<li><em>num_returns:</em> 要等待的最大Object IDs数。默认值为1；</li>
+<li><em>timeout:</em> 这是等待的最长时间（以毫秒为单位）。因此，ray.wait将阻塞，直到num_returns对象准备就绪或直到超时毫秒为止。</li>
+</ul>
+</li>
+<li>
+<p>返回值</p>
+<ul>
+<li><em>ready_ids:</em> 这是对象库中可用的Object IDs列表；</li>
+<li><em>remaining_ids:</em> 这是在object_ids中但不在ready_ids中的ID列表，因此ready_ids和remaining_ids中的ID一起构成object_ids中的所有ID。</li>
+</ul>
+</li>
+</ul>
+<p>我们可以通过以下代码来执行<code>ray.wait</code>的样例，函数将返回 <em>(ready_list, remaining_list)</em> 并且这些列表中的ObjectID将按照传递给上面的<code>f</code>的参数进行排序。</p>
+<pre class="hljs"><code><div>results = ray.wait([f.remote(i) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(<span class="hljs-number">100</span>)], num_results=<span class="hljs-number">10</span>)
+</div></code></pre>
+<h3 id="16-%E5%8A%A0%E9%80%9F%E5%BA%8F%E5%88%97%E5%8C%96">1.6. 加速序列化</h3>
+<p>将对象传递给<code>ray.put</code>函数时，该函数会使用 <em>Apache Arrow</em> 格式对对象进行序列化并将其复制到共享内存对象库中。然后，此对象将通过共享内存提供给同一台计算机上的其他worker。如果另一台机器上的worker需要它，它将会被调度器运输到另一套机器中。</p>
+<pre class="hljs"><code><div>x = np.zeros(<span class="hljs-number">1000</span>)
+f.remote(x)
+</div></code></pre>
+<p>基本上等同于</p>
+<pre class="hljs"><code><div>x = np.zeros(<span class="hljs-number">1000</span>)
+x_id = ray.put(x)
+f.remote(x_id)
+</div></code></pre>
+<p>但是，对<code>ray.put</code>的调用会将numpy数组复制到共享内存对象存储库中，所有工作进程都可以从中读取它（无需额外复制）。而以下这段代码将会复制10份numpy对象：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(<span class="hljs-number">10</span>):
+    f.remote(x)
+</div></code></pre>
+<p>这将会消耗更多的内存，并且花费额外的时间去复制对象，我们可以通过以下方法降低内存和时间的消耗（只复制一次）：</p>
+<pre class="hljs"><code><div>x_id = ray.put(x)
+<span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(<span class="hljs-number">10</span>):
+    f.remote(x_id)
+</div></code></pre>
+<h3 id="17-%E4%BD%BF%E7%94%A8gpu">1.7. 使用GPU</h3>
+<p>除了使用CPU进行并行计算外，你也可以通过指定参数<em>num_gpus</em>来使用GPU进行计算：</p>
+<pre class="hljs"><code><div><span class="hljs-meta">@ray.remote(num_gpus=1)</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f</span><span class="hljs-params">()</span>:</span>
+    ray.get_gpu_ids()
+
+<span class="hljs-meta">@ray.remote(num_gpus=2)</span>
+<span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Foo</span><span class="hljs-params">(object)</span>:</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(self)</span>:</span>
+        ray.get_gpu_ids()
+</div></code></pre>
+<p>在启动Ray的时候，我们可以传入 <em>num_gpus = 4</em> 。这将假设这台机器有4个GPU（即使它没有）。当一个任务或actor请求一个GPU时，Ray将从集合[0,1,2,3]中为其分配GPU ID。</p>
+<h3 id="18-%E5%AE%9A%E5%88%B6%E8%B5%84%E6%BA%90">1.8. 定制资源</h3>
+<p>我们已经讨论了如何指定任务的CPU和GPU要求，但还有许多其他类型的资源。例如，任务可能需要数据集，该数据集仅存在于少数计算机上，或者可能需要在具有额外内存的计算机上进行调度，我们可以通过使用自定义资源来表达这些类型的要求。</p>
+<p>Ray可以使用自定义资源字典（将资源名称映射到资源数量）启动，如下所示。</p>
+<pre class="hljs"><code><div>ray.init(resources={<span class="hljs-string">'CustomResource1'</span>: <span class="hljs-number">1</span>, <span class="hljs-string">'CustomResource2'</span>: <span class="hljs-number">4</span>})
+</div></code></pre>
+<p>我们也可以以类似的方式指定远程函数或actor的资源需求。</p>
+<pre class="hljs"><code><div><span class="hljs-meta">@ray.remote(resources={'CustomResource2': 1})</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f</span><span class="hljs-params">()</span>:</span>
+   <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>
+</div></code></pre>
+<h2 id="2-ray%E7%9B%B8%E5%85%B3%E9%AB%98%E7%BA%A7%E5%BA%93">2. Ray相关高级库</h2>
+<h3 id="21-ray-rllib">2.1. Ray RLlib</h3>
+<p><img src="img/naive_python_2_berkeley_ray/rllib_stack.svg" alt="logo"></p>
+<p>Ray RLlib是一个可扩展的强化学习库，可在多个机器上运行。它可以通过样例训练脚本以及Python API使用，它目前包括以下的实现：</p>
+<ul>
+<li>A3C</li>
+<li>DQN</li>
+<li>Evolution Strategies</li>
+<li>PPO</li>
+</ul>
+<h3 id="22-ray-tune">2.2. Ray tune</h3>
+<p>Ray.tune是一个高效的分布式超参数搜索库，它提供了一个Python API，用于深度学习，强化学习和其他计算密集型任务。这是一个说明用法的玩具示例：</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">from</span> ray.tune <span class="hljs-keyword">import</span> register_trainable, grid_search, run_experiments
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">my_func</span><span class="hljs-params">(config, reporter)</span>:</span>
+    <span class="hljs-keyword">import</span> time, numpy <span class="hljs-keyword">as</span> np
+    i = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:
+        reporter(timesteps_total=i, mean_accuracy=(i ** config[<span class="hljs-string">'alpha'</span>]))
+        i += config[<span class="hljs-string">'beta'</span>]
+        time.sleep(<span class="hljs-number">0.01</span>)
+
+register_trainable(<span class="hljs-string">'my_func'</span>, my_func)
+
+run_experiments({
+    <span class="hljs-string">'my_experiment'</span>: {
+        <span class="hljs-string">'run'</span>: <span class="hljs-string">'my_func'</span>,
+        <span class="hljs-string">'resources'</span>: {<span class="hljs-string">'cpu'</span>: <span class="hljs-number">1</span>, <span class="hljs-string">'gpu'</span>: <span class="hljs-number">0</span>},
+        <span class="hljs-string">'stop'</span>: {<span class="hljs-string">'mean_accuracy'</span>: <span class="hljs-number">100</span>},
+        <span class="hljs-string">'config'</span>: {
+            <span class="hljs-string">'alpha'</span>: grid_search([<span class="hljs-number">0.2</span>, <span class="hljs-number">0.4</span>, <span class="hljs-number">0.6</span>]),
+            <span class="hljs-string">'beta'</span>: grid_search([<span class="hljs-number">1</span>, <span class="hljs-number">2</span>]),
+        },
+    }
+})
+</div></code></pre>
+<h2 id="3-%E5%AE%9E%E9%AA%8C%E5%AF%B9%E6%AF%94">3. 实验对比</h2>
+<p>实验环境配置：</p>
+<ul>
+<li>系统：<code>Ubuntu 18.04</code></li>
+<li>语言：<code>Python3.6.7</code></li>
+</ul>
+<p>为了验证Ray与原生Python的性能差异，我们做了一个小实验来验证Ray是否能够真正地提高计算系统的性能。我们选择机器学习中最常用的底层算子 —— 矩阵乘法运算来做实验，原生Python函数与Ray远程函数如下：</p>
+<pre class="hljs"><code><div><span class="hljs-meta">@ray.remote</span>
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">continmat_remote</span><span class="hljs-params">(power: int=<span class="hljs-number">100</span>)</span>:</span>
+    <span class="hljs-keyword">if</span> power &lt;= <span class="hljs-number">0</span>:
+        <span class="hljs-keyword">return</span>
+    m: np.ndarray = np.random.randn(<span class="hljs-number">1000</span>, <span class="hljs-number">1000</span>)
+    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> range(power):
+        np.matmul(m, m)
+
+
+<span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">continmat</span><span class="hljs-params">(power: int=<span class="hljs-number">100</span>)</span>:</span>
+    <span class="hljs-keyword">if</span> power &lt;= <span class="hljs-number">0</span>:
+        <span class="hljs-keyword">return</span>
+    m: np.ndarray = np.random.randn(<span class="hljs-number">1000</span>, <span class="hljs-number">1000</span>)
+    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> range(power):
+        np.matmul(m, m)
+</div></code></pre>
+<p>这两个函数都是随机初始化一个1000维的方阵，然后再对这个方阵求100次幂。我们分别记录这两个函数重复迭代<code>count</code>次所需要的时间：</p>
+<pre class="hljs"><code><div><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">cmptest</span><span class="hljs-params">(count: int)</span>:</span>
+    <span class="hljs-keyword">if</span> count &lt; <span class="hljs-number">1</span>:
+        <span class="hljs-keyword">return</span>
+    <span class="hljs-comment"># naive python</span>
+    np_results = [[], []]
+    <span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> range(<span class="hljs-number">1</span>, count):
+        start: datetime = datetime.now()
+        <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> range(epoch):
+            continmat()
+        np_results[<span class="hljs-number">0</span>].append(epoch)
+        np_results[<span class="hljs-number">1</span>].append((datetime.now() - start).seconds)
+    <span class="hljs-comment"># berkeley ray</span>
+    ray_results= [[], []]
+    <span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> range(<span class="hljs-number">1</span>, count):
+        start: datetime = datetime.now()
+        task_ids = []
+        <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> range(epoch):
+            task_ids.append(continmat_remote.remote())
+        <span class="hljs-keyword">for</span> task_id <span class="hljs-keyword">in</span> task_ids:
+            ray.get(task_id)
+        ray_results[<span class="hljs-number">0</span>].append(epoch)
+        ray_results[<span class="hljs-number">1</span>].append((datetime.now() - start).seconds)
+    <span class="hljs-keyword">return</span> np_results, ray_results
+</div></code></pre>
+<p>我们使用单台设备(CPU核心数为4)进行计算，最终可视化这两个函数的耗时得到的结果如下：</p>
+<p><img src="img/naive_python_2_berkeley_ray/matrix_computation_test_1.png" alt="logo"></p>
+<p>通过上图我们可以发现，Ray充分利用了多核CPU的威力。当迭代次数不断增大时，总体上来讲Ray所需要的时间比原生Python更低。但是我们也注意到，在迭代次数比较低时，Ray所消耗的时间与原生Python差不多甚至略有超过，这可能是因为Ray的任务调度机制以及初始化需要占据一定的时间。总的来说，Ray非常适合任务数更多以及耗时更大的计算项目。</p>
+<h2 id="4-%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE">4. 参考文献</h2>
+<ul>
+<li>[1] <a href="https://arxiv.org/abs/1712.05889">Ray: A Distributed Framework for Emerging AI Applications</a></li>
+<li>[2] <a href="https://rise.cs.berkeley.edu/projects/ray/">https://rise.cs.berkeley.edu/projects/ray/</a></li>
+<li>[3] <a href="https://github.com/ray-project/ray">https://github.com/ray-project/ray</a></li>
+<li>[4] <a href="https://bair.berkeley.edu/blog/2018/01/09/ray/">https://bair.berkeley.edu/blog/2018/01/09/ray/</a></li>
+<li>[5] <a href="https://github.com/ray-project/tutorial">https://github.com/ray-project/tutorial</a></li>
+<li>[6] <a href="https://www.datanami.com/2017/03/28/meet-ray-real-time-machine-learning-replacement-spark/">https://www.datanami.com/2017/03/28/meet-ray-real-time-machine-learning-replacement-spark/</a></li>
+<li>[7] <a href="https://towardsdatascience.com/september-7-and-8-2017-marked-the-first-ever-risecamp-at-uc-berkeley-499df29267af">https://towardsdatascience.com/september-7-and-8-2017-marked-the-first-ever-risecamp-at-uc-berkeley-499df29267af</a></li>
+<li>[8] <a href="https://arrow.apache.org/">https://arrow.apache.org/</a></li>
+<li>[9] <a href="https://ray.readthedocs.io/en/latest/">https://ray.readthedocs.io/en/latest/</a></li>
+</ul>
+
+</body>
+</html>
